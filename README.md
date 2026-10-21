@@ -18,7 +18,7 @@ python PythonProject1/run_todo.py
 python PythonProject1/run_todo.py --data ./data/tasks.json
 ```
 
-原有 `PythonProject1/To-do-list.py` 保留不变，新入口为 `run_todo.py`。
+项目启动入口为 `PythonProject1/run_todo.py`。
 
 ## 目录与职责
 

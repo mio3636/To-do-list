@@ -1,0 +1,161 @@
+这里是storage
+import json
+import os
+
+# ==========================================
+# 1. 接口声明 (对应图片：维护存储接口约定)
+# ==========================================
+class TaskRepository:
+    """任务存储接口，定义所有存储实现必须遵循的约定"""
+    def load(self) -> list:
+        raise NotImplementedError("Must implement load method")
+        
+    def save(self, tasks: list) -> None:
+        raise NotImplementedError("Must implement save method")
+
+
+# ==========================================
+# 2. JSON 存储具体实现 (对应图片：管理文件路径、读取和校验 JSON)
+# ==========================================
+class JsonTaskRepository(TaskRepository):
+    def __init__(self, filepath="tasks.json"):
+        self.filepath = filepath
+
+    def load(self) -> list:
+        """读取并校验 JSON 数据"""
+        if not os.path.exists(self.filepath):
+            return [] # 文件不存在则返回空列表
+            
+        try:
+            with open(self.filepath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # 简单的数据校验：确保读取出来的是列表
+                if not isinstance(data, list):
+                    print("Warning: Data format error, expected a list. Returning empty.")
+                    return []
+                return data
+        except json.JSONDecodeError:
+            print("Warning: JSON file is corrupted. Returning empty list.")
+            return []
+        except Exception as e:
+            print(f"Error loading tasks: {e}")
+            return []
+
+    def save(self, tasks: list) -> None:
+        """安全保存数据到 JSON"""
+        try:
+            # 使用临时文件+重命名的方式，防止保存过程中程序崩溃导致文件损坏
+            temp_path = self.filepath + ".tmp"
+            with open(temp_path, 'w', encoding='utf-8') as f:
+                json.dump(tasks, f, indent=4, ensure_ascii=False)
+            # 原子替换
+            os.replace(temp_path, self.filepath)
+        except Exception as e:
+            print(f"Error saving tasks: {e}")
+
+
+# ==========================================
+# 3. 为你的 main() 提供便捷的全局函数
+# ==========================================
+# 实例化一个默认的仓库对象供下面的函数使用
+_default_repo = JsonTaskRepository("tasks.json")
+
+def load_tasks():
+    return _default_repo.load()
+
+def save_tasks(tasks):
+    _default_repo.save(tasks)
+
+# 下面这几个是你的 main() 里调用的业务逻辑（通常属于成员三的任务，这里我提供最基础的实现，
+# 确保你的 main() 能够正常运行，他们后续可以替换/升级这些函数）
+def add_task(tasks, desc, prio, due, cat):
+    task = {
+        "id": len(tasks) + 1 if not tasks else max(t["id"] for t in tasks) + 1,
+        "description": desc,
+        "priority": prio,
+        "due_date": due,
+        "category": cat,
+        "status": "in progress"
+    }
+    tasks.append(task)
+    print(f"Task '{desc}' added.")
+
+def view_tasks(tasks):
+    if not tasks:
+        print("No tasks found.")
+        return
+    for i, t in enumerate(tasks, 1):
+        print(f"[{i}] {t.get('description')} | Status: {t.get('status')} | Due: {t.get('due_date')}")
+
+def mark_task_status(tasks, idx, status):
+    if 0 < idx <= len(tasks):
+        tasks[idx - 1]["status"] = status
+        print(f"Task {idx} status updated to {status}.")
+    else:
+        print("Invalid index.")
+
+def delete_task(tasks, idx):
+    if 0 < idx <= len(tasks):
+        deleted = tasks.pop(idx - 1)
+        print(f"Deleted task: {deleted['description']}")
+    else:
+        print("Invalid index.")
+
+def filter_tasks(tasks, status):
+    filtered = [t for t in tasks if t.get("status") == status]
+    view_tasks(filtered)          薛涵今 自动化测试
+import unittest
+import os
+import json
+import sys
+
+# 将项目根目录加入 path，以便能导入 storage.py
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from storage import JsonTaskRepository
+
+class TestTaskStorage(unittest.TestCase):
+    
+    def setUp(self):
+        """测试前准备：指定一个临时测试文件"""
+        self.test_file = "test_tasks.json"
+        self.repo = JsonTaskRepository(self.test_file)
+        # 确保测试前文件不存在
+        if os.path.exists(self.test_file):
+            os.remove(self.test_file)
+
+    def tearDown(self):
+        """测试后清理：删除临时测试文件"""
+        if os.path.exists(self.test_file):
+            os.remove(self.test_file)
+
+    def test_load_empty_file(self):
+        """测试读取不存在的文件应返回空列表"""
+        tasks = self.repo.load()
+        self.assertEqual(tasks, [])
+
+    def test_save_and_load(self):
+        """测试保存后能正确读取，且数据一致"""
+        mock_data = [{"id": 1, "description": "Test Task", "status": "in progress"}]
+        self.repo.save(mock_data)
+        
+        # 验证文件是否真的生成了
+        self.assertTrue(os.path.exists(self.test_file))
+        
+        # 验证读取的数据与保存的一致
+        loaded_data = self.repo.load()
+        self.assertEqual(mock_data, loaded_data)
+
+    def test_corrupted_json(self):
+        """测试当 JSON 文件损坏时，程序不应崩溃，应返回空列表"""
+        with open(self.test_file, 'w', encoding='utf-8') as f:
+            f.write("{ this is not valid json ]")
+        
+        tasks = self.repo.load()
+        self.assertEqual(tasks, []) # 优雅降级
+
+def main():
+    """运行所有测试"""
+    unittest.main()
+
+if __name__ == "__main__":
+    main()

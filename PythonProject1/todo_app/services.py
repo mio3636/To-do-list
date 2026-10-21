@@ -17,6 +17,14 @@ class TaskService:
         self.repository.save(tasks)
         self._tasks = tasks
 
+    def all_tasks(self) -> list[Task]:
+        """返回包含已完成任务的稳定列表副本，供命令行序号操作使用。"""
+        return list(self._tasks)
+
+    def save(self) -> None:
+        """支持队友菜单中的“保存并退出”；日常操作也会立即保存。"""
+        self.repository.save(self._tasks)
+
     def get(self, task_id: str) -> Task:
         for task in self._tasks:
             if task.id == task_id:
@@ -33,6 +41,8 @@ class TaskService:
         if fields.keys() - allowed:
             raise ValueError("包含不能修改的字段")
         if "title" in fields:
+            if not isinstance(fields["title"], str):
+                raise ValueError("任务名称必须是文本")
             fields["title"] = fields["title"].strip()
         updated = replace(self.get(task_id), **fields)
         self._commit([updated if t.id == task_id else t for t in self._tasks])

@@ -8,3 +8,5 @@ venv/
 .coverage
 data/
 *.tmp
+tasks.json
+*.legacy*.bak

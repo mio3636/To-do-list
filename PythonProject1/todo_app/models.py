@@ -41,6 +41,8 @@ class Task:
 
     @classmethod
     def create(cls, title: str, **fields):
+        if not isinstance(title, str):
+            raise ValueError("任务名称必须是文本")
         return cls(id=uuid4().hex, title=title.strip(),
                    created_at=datetime.now().isoformat(timespec="seconds"), **fields)
 

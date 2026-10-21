@@ -1,0 +1,38 @@
+def main():
+    tasks = load_tasks()
+    while True:
+        print("\n===== TODO LIST MENU =====")
+        print("1. Add new task")
+        print("2. View all tasks")
+        print("3. Mark task completed ")
+        print("4. Delete a task")
+        print("5. Filter completed tasks")
+        print("6. Save & Exit")
+        choice = input("\nPlease select option (1-7): ")
+        if choice == "1":
+            desc = input("Task description: ")
+            prio = input("Priority (1=highest ★★★, 3=lowest ★): ")
+            due = input("Due date (e.g. 2026-12-31): ")
+            cat = input("Category (Study / Work / Leisure): ")
+            add_task(tasks, desc, prio, due, cat)
+        elif choice == "2":
+            view_tasks(tasks)
+        elif choice == "3":
+            idx = int(input("Input task index to mark: "))
+            status_choice = input("Set status to [c]ompleted or [i]n progress: ")
+            if status_choice.lower() == "c":
+                mark_task_status(tasks, idx, "completed")
+            elif status_choice.lower() == "i":
+                mark_task_status(tasks, idx, "in progress")
+        elif choice == "4":
+            idx = int(input("Input task index to delete: "))
+            delete_task(tasks, idx)
+        elif choice == "5":
+            filter_tasks(tasks, "completed")
+       
+        elif choice == "6":
+            save_tasks(tasks)
+            print("Program exit.")
+            break
+        else:
+            print("Invalid option, try again.")

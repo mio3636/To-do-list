@@ -1,0 +1,118 @@
+import json
+
+# ========= 函数名严格和你main里面对齐 =========
+def load_tasks():
+    """加载任务，从tasks.json读取，不存在则返回空列表"""
+    try:
+        with open("tasks.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
+
+def save_tasks(tasks):
+    """保存任务列表到tasks.json"""
+    with open("tasks.json", "w", encoding="utf-8") as f:
+        json.dump(tasks, f, ensure_ascii=False, indent=2)
+
+
+def add_task(tasks, desc, prio, due, cat):
+    """新增任务，字段和main输入对应：描述、优先级、截止日期、分类"""
+    new_task = {
+        "description": desc,
+        "priority": prio,
+        "due_date": due,
+        "category": cat,
+        "status": "in progress"
+    }
+    tasks.append(new_task)
+    print("✅ Task added successfully!")
+
+
+def view_tasks(tasks):
+    """查看全部任务，带序号展示"""
+    if not tasks:
+        print("📭 No tasks in list.")
+        return
+    print("\n===== ALL TASKS =====")
+    for idx, t in enumerate(tasks, start=1):
+        print(f"[{idx}] | {t['status']:12s} | Prio:{t['priority']} | Due:{t['due_date']} | Cat:{t['category']}")
+        print(f"     Desc: {t['description']}")
+
+
+def mark_task_status(tasks, idx, status):
+    """修改任务状态：completed / in progress
+    idx是用户输入的从1开始的序号
+    """
+    real_index = idx - 1
+    if 0 <= real_index < len(tasks):
+        tasks[real_index]["status"] = status
+        print(f"✅ Task {idx} updated to [{status}]")
+    else:
+        print("❌ Invalid task index!")
+
+
+def delete_task(tasks, idx):
+    """删除指定序号任务"""
+    real_index = idx - 1
+    if 0 <= real_index < len(tasks):
+        tasks.pop(real_index)
+        print(f"🗑️ Task {idx} deleted.")
+    else:
+        print("❌ Invalid task index!")
+
+
+def filter_tasks(tasks, target_status):
+    """筛选指定状态任务，main里传入 'completed'"""
+    matched = [t for t in tasks if t["status"] == target_status]
+    if not matched:
+        print(f"🔍 No {target_status} tasks found.")
+        return
+    print(f"\n===== {target_status.upper()} TASKS =====")
+    for idx, t in enumerate(matched, start=1):
+        print(f"[{idx}] | Prio:{t['priority']} | Due:{t['due_date']} | Cat:{t['category']}")
+        print(f"     Desc: {t['description']}")
+
+
+# ========== 你原来的main函数直接放在下面即可 ==========
+def main():
+    tasks = load_tasks()
+    while True:
+        print("\n===== TODO LIST MENU =====")
+        print("1. Add new task")
+        print("2. View all tasks")
+        print("3. Mark task completed ")
+        print("4. Delete a task")
+        print("5. Filter completed tasks")
+        print("6. Save & Exit")
+        choice = input("\nPlease select option (1-7): ")
+        if choice == "1":
+            desc = input("Task description: ")
+            prio = input("Priority (1=highest ★★★, 3=lowest ★): ")
+            due = input("Due date (e.g. 2026-12-31): ")
+            cat = input("Category (Study / Work / Leisure): ")
+            add_task(tasks, desc, prio, due, cat)
+        elif choice == "2":
+            view_tasks(tasks)
+        elif choice == "3":
+            idx = int(input("Input task index to mark: "))
+            status_choice = input("Set status to [c]ompleted or [i]n progress: ")
+            if status_choice.lower() == "c":
+                mark_task_status(tasks, idx, "completed")
+            elif status_choice.lower() == "i":
+                mark_task_status(tasks, idx, "in progress")
+        elif choice == "4":
+            idx = int(input("Input task index to delete: "))
+            delete_task(tasks, idx)
+        elif choice == "5":
+            filter_tasks(tasks, "completed")
+        elif choice == "6":
+            save_tasks(tasks)
+            print("Program exit.")
+            break
+        else:
+            print("Invalid option, try again.")
+
+
+if __name__ == "__main__":
+    main()
